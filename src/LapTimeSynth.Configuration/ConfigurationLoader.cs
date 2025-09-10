@@ -1,0 +1,75 @@
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
+using LapTimeSynth.Models;
+
+namespace LapTimeSynth.Configuration;
+
+/// <summary>
+/// Loads race configuration from YAML files
+/// </summary>
+public class ConfigurationLoader
+{
+    private readonly IDeserializer _deserializer;
+    
+    public ConfigurationLoader()
+    {
+        _deserializer = new DeserializerBuilder()
+            .WithNamingConvention(UnderscoredNamingConvention.Instance)
+            .Build();
+    }
+    
+    public RaceConfiguration LoadFromFile(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"Configuration file not found: {filePath}");
+        }
+        
+        var yamlContent = File.ReadAllText(filePath);
+        var config = _deserializer.Deserialize<RaceConfiguration>(yamlContent);
+        
+        ValidateConfiguration(config);
+        return config;
+    }
+    
+    private void ValidateConfiguration(RaceConfiguration config)
+    {
+        if (config.Race == null)
+        {
+            throw new InvalidOperationException("Race configuration is missing");
+        }
+        
+        if (!IsValidLapCount(config.Race.Laps))
+        {
+            throw new InvalidOperationException($"Invalid lap count: {config.Race.Laps}. Must be 4.5, 9, or 13.5");
+        }
+        
+        if (config.Skaters == null || config.Skaters.Count == 0)
+        {
+            throw new InvalidOperationException("No skaters configured");
+        }
+        
+        if (config.Skaters.Count > 10)
+        {
+            throw new InvalidOperationException($"Too many skaters: {config.Skaters.Count}. Maximum is 10");
+        }
+        
+        foreach (var skater in config.Skaters)
+        {
+            if (skater.Lane < 1 || skater.Lane > 10)
+            {
+                throw new InvalidOperationException($"Invalid lane number: {skater.Lane}. Must be between 1 and 10");
+            }
+            
+            if (skater.AverageSplitTime <= 0)
+            {
+                throw new InvalidOperationException($"Invalid average split time for lane {skater.Lane}: {skater.AverageSplitTime}");
+            }
+        }
+    }
+    
+    private bool IsValidLapCount(double laps)
+    {
+        return laps == 4.5 || laps == 9 || laps == 13.5;
+    }
+}

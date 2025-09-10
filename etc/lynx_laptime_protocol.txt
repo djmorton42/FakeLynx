@@ -1,0 +1,82 @@
+Lynx LapTime Protocol
+---------------------
+02/22/2010 kms - Created.
+11/02/2011 kms - Revised.
+06/10/2017 kms - <event>,<round>,<heat> added.
+Overview
+--------
+The Lynx LapTime Protocol allows any device to easily send split time
+information to FinishLynx.
+FinishLynx has three "Sync Source" options: External, Internal, and None.
+External Sync is used when the LapTime device will receive the same
+start signal that FinishLynx receives. The LapTime device can produce
+elapsed times or times in its local time of day. If using its local time
+of day the LapTime device must notify FinishLynx of the "zero" time
+(the time that the start occurred) using the "Z" opcode.
+Internal Sync is used when it is not possible (or not convenient) to
+provide the LapTime device with the start signal. FinishLynx syncs the
+LapTime device's clock with its clock based on the arrival time of
+data packets. FinishLynx then uses its own start time to compute the
+elapsed split times. For Internal Sync to work well, it is important
+that data packets are sent by the LapTime device with as little delay
+as possible.
+None Sync is used when the LapTime device is able to produce times in
+the same time base that FinishLynx is using. This is possible if both
+FinishLynx and the LapTime device are synced to the same external timer.
+Protocol
+--------
+Each data packet sent to FinishLynx must have the following format:
+<sot><opcode>,<time>[,<identifier>[,<event>,<round>,<heat>]]<eot>
+<sot> := <sync ok> | <no sync>
+<sync ok> := 01 hex
+<no sync> := 02 hex
+<opcode> := S | Z | T
+<time> := formatted time field
+<identifier> := object identifier field (S opcode only)
+<eot> := <cr> | <lf> | <cr><lf>
+<cr> := 0D hex
+<lf> := 0A hex
+The "S" opcode is for sending object split times. Both a time and
+an identifier (for example, lane number) must be sent. The identifier
+can optionally be followed by the event, round, and heat of the split.
+The "Z" opcode is for sending the "zero" (or start) time of the
+current event. If FinishLynx is configured to use External Sync then
+all subsequent split times will have this time subtracted from them.
+If External Sync is not used then "Z" packets are not needed.
+The "T" opcode is for sending the LapTime device's current time of day.
+If FinishLynx is configured to use Internal Sync then these packets
+can be sent periodically to ensure good sync between the LapTime device
+and FinishLynx. If Internal Sync is not used then "T" packets are not
+needed.
+The <sync ok> byte is used to indicate to FinishLynx that the packet
+is suitable for Internal Sync. The <no sync> byte is used to indicate
+that the packet is not suitable for Internal Sync. An "S" (split time)
+packet that is sent after the split event actually occurred should use
+the <no sync> byte. For instance, a transponder based split time system
+might wait to determine that the transponder has moved beyond the
+antenna before sending the split time. If "S" packets are sent with the
+<no sync> byte then "T" packets must periodically be sent with the
+<sync ok> byte. Even if "S" packets are sent with the <sync ok> byte
+it is best to periodically send "T" packets to maintain good sync.
+Sample Data Packets
+-------------------
+External Sync:
+<sync ok>Z,13:23:15.345<eot>
+<sync ok>S,13:24:12.876,2<eot>
+<sync ok>S,13:24:13.134,1<eot>
+<sync ok>S,13:25:10.364,2<eot>
+<sync ok>S,13:25:11.496,1<eot>
+Internal Sync: ("S" packets not delayed; "T" packets not sent)
+<sync ok>S,13:24:12.876,2<eot>
+<sync ok>S,13:24:13.134,1<eot>
+<sync ok>S,13:25:10.364,2<eot>
+<sync ok>S,13:25:11.496,1<eot>
+Internal Sync: ("S" packets are delayed; "T" packets are sent)
+<sync ok>T,13:24:00.000<eot>
+<no sync>S,13:24:12.876,2<eot>
+<no sync>S,13:24:13.134,1<eot>
+<sync ok>T,13:24:30.000<eot>
+<sync ok>T,13:25:00.000<eot>
+<no sync>S,13:25:10.364,2<eot>
+<no sync>S,13:25:11.496,1<eot>
+<sync ok>T,13:25:30.000<eot>

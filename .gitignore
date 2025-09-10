@@ -22,6 +22,10 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+[Dd]ist/
+
+# Log files when running the app
+output/
 
 # .NET Core
 project.lock.json
@@ -52,3 +56,6 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+
+todo.md

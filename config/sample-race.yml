@@ -1,0 +1,17 @@
+race:
+  laps: 9  # Can be 4.5, 9, or 13.5
+  tcp:
+    host: localhost
+    port: 2002
+
+skaters:
+  - lane: 1
+    average_split_time: 12.2  # seconds
+  - lane: 2
+    average_split_time: 11.8
+  - lane: 3
+    average_split_time: 12.5
+  - lane: 4
+    average_split_time: 13.1
+  - lane: 5
+    average_split_time: 12.9
