@@ -14,6 +14,76 @@ class Program
     private static PacketSerializer? _packetSerializer;
     private static List<string> _raceResults = new();
 
+    private static async Task RunRace()
+    {
+        // Start the race
+        Console.WriteLine("=== LAP TIMES ===");
+        Console.WriteLine();
+
+        _raceTimer!.StartRace(_currentRace!);
+        
+        // For Internal Sync mode, no Z packet is needed
+        Console.WriteLine("Race started - using Internal Sync mode");
+        Console.WriteLine();
+
+        // Main race loop
+        var raceStartTime = DateTime.Now;
+
+        while (true)
+        {
+            var currentTime = DateTime.Now;
+            
+            // Process timer events
+            _raceTimer.ProcessEvents(currentTime);
+
+            // Check if race is finished - wait for all events to be processed
+            if (IsRaceFinished())
+            {
+                // Process any remaining events to ensure all laps are completed
+                _raceTimer.ProcessAllRemainingEvents();
+                break;
+            }
+
+            // Check for early termination
+            if (Console.KeyAvailable)
+            {
+                Console.ReadKey(true);
+                Console.WriteLine("\nRace stopped by user.");
+                break;
+            }
+
+            await Task.Delay(50); // Small delay to prevent excessive CPU usage
+        }
+
+        // Finish race
+        _currentRace!.EndTime = DateTime.Now;
+        _currentRace.IsFinished = true;
+
+        Console.WriteLine();
+        Console.WriteLine("=== RACE FINISHED ===");
+        Console.WriteLine($"Total race time: {(_currentRace.EndTime!.Value - _currentRace.StartTime).TotalSeconds:F1} seconds");
+        Console.WriteLine();
+
+        // Display final results
+        DisplayFinalResults();
+    }
+
+    private static void ResetApplicationState()
+    {
+        // Clear race results
+        _raceResults.Clear();
+        
+        // Reset race timer if it exists
+        if (_raceTimer != null)
+        {
+            // The race timer should be reset when we create a new race
+            // but we can add any additional cleanup here if needed
+        }
+        
+        // Note: We keep the TCP connection and packet serializer as they can be reused
+        // The race engine will be reused to create a new race
+    }
+
     static async Task Main(string[] args)
     {
         try
@@ -62,56 +132,8 @@ class Program
             Console.ReadKey(true);
             Console.WriteLine();
 
-            // Start the race
-            Console.WriteLine("=== LAP TIMES ===");
-            Console.WriteLine();
-
-            _raceTimer.StartRace(_currentRace);
-            
-            // For Internal Sync mode, no Z packet is needed
-            Console.WriteLine("Race started - using Internal Sync mode");
-            Console.WriteLine();
-
-            // Main race loop
-            var raceStartTime = DateTime.Now;
-
-            while (true)
-            {
-                var currentTime = DateTime.Now;
-                
-                // Process timer events
-                _raceTimer.ProcessEvents(currentTime);
-
-                // Check if race is finished - wait for all events to be processed
-                if (IsRaceFinished())
-                {
-                    // Process any remaining events to ensure all laps are completed
-                    _raceTimer.ProcessAllRemainingEvents();
-                    break;
-                }
-
-                // Check for early termination
-                if (Console.KeyAvailable)
-                {
-                    Console.ReadKey(true);
-                    Console.WriteLine("\nRace stopped by user.");
-                    break;
-                }
-
-                await Task.Delay(50); // Small delay to prevent excessive CPU usage
-            }
-
-            // Finish race
-            _currentRace.EndTime = DateTime.Now;
-            _currentRace.IsFinished = true;
-
-            Console.WriteLine();
-            Console.WriteLine("=== RACE FINISHED ===");
-            Console.WriteLine($"Total race time: {(_currentRace.EndTime!.Value - _currentRace.StartTime).TotalSeconds:F1} seconds");
-            Console.WriteLine();
-
-            // Display final results
-            DisplayFinalResults();
+            // Run the first race
+            await RunRace();
 
             // Save results
             await SaveRaceResults();
@@ -119,19 +141,52 @@ class Program
             Console.WriteLine();
             Console.WriteLine("Race results saved to output/race-results.txt");
             Console.WriteLine();
-            Console.WriteLine("Press any key to disconnect from FinishLynx.");
-            Console.ReadKey(true);
 
-            // Disconnect
-            if (_tcpClient?.Connected == true)
+            // Main application loop - allow multiple races
+            while (true)
             {
-                _tcpClient.Close();
-                Console.WriteLine("Disconnected from FinishLynx.");
-            }
+                Console.WriteLine("What would you like to do?");
+                Console.WriteLine("1. Run another race (keep connection)");
+                Console.WriteLine("2. Disconnect and exit");
+                Console.Write("Enter your choice (1 or 2): ");
+                
+                var choice = Console.ReadLine();
+                Console.WriteLine();
 
-            Console.WriteLine();
-            Console.WriteLine("Press any key to exit...");
-            Console.ReadKey(true);
+                if (choice == "1")
+                {
+                    // Reset application state for new race
+                    ResetApplicationState();
+                    
+                    // Create new race with same configuration
+                    _currentRace = raceEngine.CreateRace(config);
+                    Console.WriteLine($"Created new race with {_currentRace.Skaters.Count} skaters");
+                    Console.WriteLine();
+                    
+                    // Start the new race
+                    Console.WriteLine("Press any key to start the new race...");
+                    Console.ReadKey(true);
+                    Console.WriteLine();
+                    
+                    // Run the race (extract race logic into a method)
+                    await RunRace();
+                }
+                else if (choice == "2")
+                {
+                    // Disconnect and exit
+                    if (_tcpClient?.Connected == true)
+                    {
+                        _tcpClient.Close();
+                        Console.WriteLine("Disconnected from FinishLynx.");
+                    }
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("Invalid choice. Please enter 1 or 2.");
+                    Console.WriteLine();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -218,33 +273,6 @@ class Program
             Console.WriteLine($"*** {finishMessage} ***");
             _raceResults.Add(finishMessage);
         }
-    }
-
-    private static void UpdateProgressDisplay()
-    {
-        if (_currentRace == null) return;
-
-        // Calculate elapsed time from race start
-        var elapsedTime = DateTime.Now - _currentRace.StartTime;
-        var elapsedSeconds = elapsedTime.TotalSeconds;
-
-        // Move cursor up to overwrite the progress line
-        Console.SetCursorPosition(0, Console.CursorTop - 1);
-        var progressLine = $"Race Progress: {GetRaceProgress()} | Elapsed: +{elapsedSeconds:F1}s";
-        Console.WriteLine(progressLine.PadRight(Console.WindowWidth - 1));
-    }
-
-    private static void UpdateDisplay()
-    {
-        if (_currentRace == null) return;
-
-        // Calculate elapsed time from race start
-        var elapsedTime = DateTime.Now - _currentRace.StartTime;
-        var elapsedSeconds = elapsedTime.TotalSeconds;
-
-        // Display progress line on a new line (don't overwrite anything)
-        var progressLine = $"Race Progress: {GetRaceProgress()} | Elapsed: +{elapsedSeconds:F1}s";
-        Console.WriteLine(progressLine);
     }
 
     private static string GetRaceProgress()
