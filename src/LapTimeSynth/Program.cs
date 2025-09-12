@@ -26,6 +26,14 @@ class Program
         
         // For Internal Sync mode, no Z packet is needed
         Console.WriteLine("Race started - using Internal Sync mode");
+        
+        // Send start line crossing packets for even lap races
+        if (_currentRace!.HasEvenLaps)
+        {
+            Console.WriteLine("Sending start line crossing packets (even lap race)...");
+            await SendStartLineCrossings();
+        }
+        
         Console.WriteLine();
 
         // Main race loop
@@ -307,6 +315,70 @@ class Program
         catch (Exception ex)
         {
             Console.WriteLine($"  -> Packet error: {ex.Message}");
+        }
+    }
+
+    private static async Task SendStartLineCrossings()
+    {
+        if (_packetSerializer == null || _currentRace == null || _currentConfig == null)
+            return;
+
+        var startTime = _currentRace.StartTime;
+        
+        foreach (var skater in _currentRace.Skaters)
+        {
+            try
+            {
+                // Create a start line crossing packet (lap 0, time 0)
+                var startLapTime = new LapTime(
+                    skater.Lane,
+                    0, // Start line crossing is lap 0
+                    0.0, // No time for start line crossing
+                    startTime,
+                    false // Not a half lap
+                );
+                
+                var packet = _packetSerializer.CreateSplitTimePacket(startLapTime, useSyncOk: true);
+                var packetData = _packetSerializer.SerializePacket(packet);
+                var packetString = System.Text.Encoding.UTF8.GetString(packetData).Trim();
+                
+                Console.WriteLine($"  -> Start crossing - Lane {skater.Lane}: {packetString}");
+                
+                // Send first packet (first transponder)
+                if (_tcpClient?.Connected == true)
+                {
+                    var stream = _tcpClient.GetStream();
+                    stream.Write(packetData, 0, packetData.Length);
+                    Console.WriteLine($"  -> Sent to FinishLynx (Transponder 1)");
+                }
+                else
+                {
+                    Console.WriteLine($"  -> (Not sent - no TCP connection)");
+                }
+
+                // Send second packet (second transponder) if dual transponder is enabled
+                if (_currentConfig.Race.DualTransponder.Enabled)
+                {
+                    var delayMs = _currentConfig.Race.DualTransponder.DelayMilliseconds;
+                    await Task.Delay(TimeSpan.FromMilliseconds(delayMs));
+                    
+                    // Send the same packet again (second transponder)
+                    if (_tcpClient?.Connected == true)
+                    {
+                        var stream = _tcpClient.GetStream();
+                        stream.Write(packetData, 0, packetData.Length);
+                        Console.WriteLine($"  -> Sent to FinishLynx (Transponder 2) - {delayMs}ms delay");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"  -> (Not sent - no TCP connection)");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  -> Start crossing packet error for Lane {skater.Lane}: {ex.Message}");
+            }
         }
     }
 

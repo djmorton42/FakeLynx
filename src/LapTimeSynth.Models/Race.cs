@@ -11,6 +11,7 @@ public class Race
     public DateTime? EndTime { get; set; }
     public bool IsFinished { get; set; } = false;
     public bool HasHalfLap => Laps % 1 != 0;
+    public bool HasEvenLaps => Laps % 1 == 0; // Integer number of laps means even laps
     
     public Race(double laps)
     {
