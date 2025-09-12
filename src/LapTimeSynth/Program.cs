@@ -245,7 +245,7 @@ class Program
         
         // Log lap time with both split time and total elapsed time
         var lapType = lapTime.IsHalfLap ? "Half-lap" : $"Lap {lapTime.LapNumber}";
-        var logMessage = $"[+{elapsedSeconds:F1}s] Lane {skater.Lane} - {lapType}: {lapTime.TimeInSeconds:F3}s (Total: {totalElapsedTime:F3}s)";
+        var logMessage = $"[+{elapsedSeconds:F1}s] Lane {skater.Lane} - {lapType}: {lapTime.TimeInSeconds:F4}s (Total: {totalElapsedTime:F4}s)";
         
         // Write the lap time (this will appear above the progress line)
         Console.WriteLine(logMessage);
@@ -422,7 +422,7 @@ class Program
             var position = i + 1;
             var totalTime = skater.FinishTime.HasValue ? (skater.FinishTime.Value - _currentRace.StartTime).TotalSeconds : 0;
             
-            Console.WriteLine($"  {position}. Lane {skater.Lane} - {totalTime:F3}s");
+            Console.WriteLine($"  {position}. Lane {skater.Lane} - {totalTime:F4}s");
         }
 
         Console.WriteLine();
@@ -463,7 +463,7 @@ class Program
             var position = i + 1;
             var totalTime = skater.FinishTime.HasValue ? (skater.FinishTime.Value - _currentRace.StartTime).TotalSeconds : 0;
             
-            results.Add($"{position}. Lane {skater.Lane} - {totalTime:F3}s");
+            results.Add($"{position}. Lane {skater.Lane} - {totalTime:F4}s");
         }
 
         var outputDir = "output";
