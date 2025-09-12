@@ -13,6 +13,7 @@ public class RaceSettings
 {
     public double Laps { get; set; }
     public TcpSettings Tcp { get; set; } = new();
+    public DualTransponderSettings DualTransponder { get; set; } = new();
 }
 
 public class TcpSettings
@@ -25,4 +26,10 @@ public class SkaterConfiguration
 {
     public int Lane { get; set; }
     public double AverageSplitTime { get; set; }
+}
+
+public class DualTransponderSettings
+{
+    public bool Enabled { get; set; } = true;
+    public double DelayMilliseconds { get; set; } = 50.0; // Default 50ms delay between transponders
 }

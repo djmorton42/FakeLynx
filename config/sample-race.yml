@@ -3,6 +3,9 @@ race:
   tcp:
     host: localhost
     port: 2002
+  dual_transponder:
+    enabled: true
+    delay_milliseconds: 50.0  # Delay between first and second transponder packets
 
 skaters:
   - lane: 1

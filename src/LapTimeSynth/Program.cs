@@ -14,6 +14,7 @@ class Program
     private static TcpClient? _tcpClient;
     private static PacketSerializer? _packetSerializer;
     private static List<string> _raceResults = new();
+    private static RaceConfiguration? _currentConfig;
 
     private static async Task RunRace()
     {
@@ -96,6 +97,7 @@ class Program
             var configPath = args.Length > 0 ? args[0] : "config/sample-race.yml";
             var configLoader = new ConfigurationLoader();
             var config = configLoader.LoadFromFile(configPath);
+            _currentConfig = config;
 
             // Display race information
             Console.WriteLine($"Race Configuration:");
@@ -103,6 +105,11 @@ class Program
             Console.WriteLine($"  • Number of racers: {config.Skaters.Count}");
             Console.WriteLine($"  • Target host: {config.Race.Tcp.Host}");
             Console.WriteLine($"  • Target port: {config.Race.Tcp.Port}");
+            Console.WriteLine($"  • Dual transponder: {(config.Race.DualTransponder.Enabled ? "Enabled" : "Disabled")}");
+            if (config.Race.DualTransponder.Enabled)
+            {
+                Console.WriteLine($"  • Transponder delay: {config.Race.DualTransponder.DelayMilliseconds}ms");
+            }
             Console.WriteLine();
 
             // Initialize components
@@ -216,7 +223,7 @@ class Program
         }
     }
 
-    private static void OnLapCompleted(object? sender, LapCompletedEventArgs e)
+    private static async void OnLapCompleted(object? sender, LapCompletedEventArgs e)
     {
         var lapTime = e.LapTime;
         var skater = e.Skater;
@@ -236,37 +243,13 @@ class Program
         Console.WriteLine(logMessage);
         _raceResults.Add(logMessage);
 
-        // Create and display packet (whether or not TCP is connected)
-        if (_packetSerializer != null)
+        // Send packets (dual transponder behavior)
+        if (_packetSerializer != null && _currentConfig != null)
         {
-            try
-            {
-                var packet = _packetSerializer.CreateSplitTimePacket(lapTime, useSyncOk: true);
-                var packetData = _packetSerializer.SerializePacket(packet);
-                var packetString = System.Text.Encoding.UTF8.GetString(packetData).Trim();
-                
-                // Always show the packet content
-                Console.WriteLine($"  -> Packet: {packetString}");
-                
-                // Send packet to timing device if connected
-                if (_tcpClient?.Connected == true)
-                {
-                    var stream = _tcpClient.GetStream();
-                    stream.Write(packetData, 0, packetData.Length);
-                    Console.WriteLine($"  -> Sent to FinishLynx");
-                }
-                else
-                {
-                    Console.WriteLine($"  -> (Not sent - no TCP connection)");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"  -> Packet error: {ex.Message}");
-            }
+            await SendLapTimePackets(lapTime, skater);
         }
 
-        // Check if skater finished AFTER packet is sent
+        // Check if skater finished AFTER packets are sent
         if (_raceEngine != null && _currentRace != null && _raceEngine.IsSkaterFinished(skater, _currentRace))
         {
             skater.IsFinished = true;
@@ -276,6 +259,54 @@ class Program
             var finishMessage = $"[+{finishElapsed.TotalSeconds:F1}s] Lane {skater.Lane} - 🏁 FINISHED!";
             Console.WriteLine($"*** {finishMessage} ***");
             _raceResults.Add(finishMessage);
+        }
+    }
+
+    private static async Task SendLapTimePackets(LapTime lapTime, Skater skater)
+    {
+        try
+        {
+            var packet = _packetSerializer!.CreateSplitTimePacket(lapTime, useSyncOk: true);
+            var packetData = _packetSerializer.SerializePacket(packet);
+            var packetString = System.Text.Encoding.UTF8.GetString(packetData).Trim();
+            
+            // Always show the packet content
+            Console.WriteLine($"  -> Packet: {packetString}");
+            
+            // Send first packet (first transponder)
+            if (_tcpClient?.Connected == true)
+            {
+                var stream = _tcpClient.GetStream();
+                stream.Write(packetData, 0, packetData.Length);
+                Console.WriteLine($"  -> Sent to FinishLynx (Transponder 1)");
+            }
+            else
+            {
+                Console.WriteLine($"  -> (Not sent - no TCP connection)");
+            }
+
+            // Send second packet (second transponder) if dual transponder is enabled
+            if (_currentConfig!.Race.DualTransponder.Enabled)
+            {
+                var delayMs = _currentConfig.Race.DualTransponder.DelayMilliseconds;
+                await Task.Delay(TimeSpan.FromMilliseconds(delayMs));
+                
+                // Send the same packet again (second transponder)
+                if (_tcpClient?.Connected == true)
+                {
+                    var stream = _tcpClient.GetStream();
+                    stream.Write(packetData, 0, packetData.Length);
+                    Console.WriteLine($"  -> Sent to FinishLynx (Transponder 2) - {delayMs}ms delay");
+                }
+                else
+                {
+                    Console.WriteLine($"  -> (Not sent - no TCP connection)");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"  -> Packet error: {ex.Message}");
         }
     }
 
