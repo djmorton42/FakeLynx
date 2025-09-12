@@ -10,6 +10,7 @@ class Program
 {
     private static Race? _currentRace;
     private static RaceTimer? _raceTimer;
+    private static RaceEngine? _raceEngine;
     private static TcpClient? _tcpClient;
     private static PacketSerializer? _packetSerializer;
     private static List<string> _raceResults = new();
@@ -105,12 +106,12 @@ class Program
             Console.WriteLine();
 
             // Initialize components
-            var raceEngine = new RaceEngine();
-            _raceTimer = new RaceTimer(raceEngine);
+            _raceEngine = new RaceEngine();
+            _raceTimer = new RaceTimer(_raceEngine);
             _packetSerializer = new PacketSerializer();
 
             // Create race
-            _currentRace = raceEngine.CreateRace(config);
+            _currentRace = _raceEngine.CreateRace(config);
             Console.WriteLine($"Created race with {_currentRace.Skaters.Count} skaters");
             Console.WriteLine();
 
@@ -159,7 +160,7 @@ class Program
                     ResetApplicationState();
                     
                     // Create new race with same configuration
-                    _currentRace = raceEngine.CreateRace(config);
+                    _currentRace = _raceEngine.CreateRace(config);
                     Console.WriteLine($"Created new race with {_currentRace.Skaters.Count} skaters");
                     Console.WriteLine();
                     
@@ -265,9 +266,12 @@ class Program
             }
         }
 
-        // Check if skater finished
-        if (skater.IsFinished)
+        // Check if skater finished AFTER packet is sent
+        if (_raceEngine != null && _currentRace != null && _raceEngine.IsSkaterFinished(skater, _currentRace))
         {
+            skater.IsFinished = true;
+            skater.FinishTime = DateTime.Now;
+            
             var finishElapsed = skater.FinishTime!.Value - _currentRace!.StartTime;
             var finishMessage = $"[+{finishElapsed.TotalSeconds:F1}s] Lane {skater.Lane} - 🏁 FINISHED!";
             Console.WriteLine($"*** {finishMessage} ***");

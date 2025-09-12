@@ -139,13 +139,6 @@ public class RaceTimer
         skater.LapTimes.Add(lapTime);
         skater.CurrentLap = timerEvent.LapNumber + 1;
         
-        // Check if skater is finished
-        if (_raceEngine.IsSkaterFinished(skater, GetRaceFromSkater(skater)))
-        {
-            skater.IsFinished = true;
-            skater.FinishTime = currentTime;
-        }
-        
         timerEvent.Processed = true;
         
         // Raise event
