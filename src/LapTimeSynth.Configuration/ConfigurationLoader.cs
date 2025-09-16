@@ -61,9 +61,34 @@ public class ConfigurationLoader
                 throw new InvalidOperationException($"Invalid lane number: {skater.Lane}. Must be between 1 and 10");
             }
             
-            if (skater.AverageSplitTime <= 0)
+            // Validate that either average split time or explicit times are provided
+            bool hasAverageTime = skater.AverageSplitTime > 0;
+            bool hasExplicitTimes = skater.Times != null && skater.Times.Count > 0;
+            
+            if (!hasAverageTime && !hasExplicitTimes)
+            {
+                throw new InvalidOperationException($"Skater in lane {skater.Lane} must have either average_split_time or times configured");
+            }
+            
+            if (hasAverageTime && hasExplicitTimes)
+            {
+                throw new InvalidOperationException($"Skater in lane {skater.Lane} cannot have both average_split_time and times configured. Choose one.");
+            }
+            
+            if (hasAverageTime && skater.AverageSplitTime <= 0)
             {
                 throw new InvalidOperationException($"Invalid average split time for lane {skater.Lane}: {skater.AverageSplitTime}");
+            }
+            
+            if (hasExplicitTimes)
+            {
+                foreach (var time in skater.Times!)
+                {
+                    if (time <= 0)
+                    {
+                        throw new InvalidOperationException($"Invalid explicit time for lane {skater.Lane}: {time}. All times must be positive.");
+                    }
+                }
             }
         }
     }

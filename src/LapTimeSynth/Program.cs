@@ -27,10 +27,10 @@ class Program
         // For Internal Sync mode, no Z packet is needed
         Console.WriteLine("Race started - using Internal Sync mode");
         
-        // Send start line crossing packets for even lap races
-        if (_currentRace!.HasEvenLaps)
+        // Send start line crossing packets for races with whole number of laps (not half laps)
+        if (_currentRace!.HasWholeLaps)
         {
-            Console.WriteLine("Sending start line crossing packets (even lap race)...");
+            Console.WriteLine("Sending start line crossing packets (whole lap race)...");
             await SendStartLineCrossings();
         }
         

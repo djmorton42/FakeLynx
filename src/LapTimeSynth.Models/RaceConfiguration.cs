@@ -26,6 +26,7 @@ public class SkaterConfiguration
 {
     public int Lane { get; set; }
     public double AverageSplitTime { get; set; }
+    public List<double>? Times { get; set; } // Explicit split times in seconds
 }
 
 public class DualTransponderSettings

@@ -29,7 +29,7 @@ public class RaceEngine
         
         foreach (var skaterConfig in config.Skaters)
         {
-            var skater = new Skater(skaterConfig.Lane, skaterConfig.AverageSplitTime);
+            var skater = new Skater(skaterConfig.Lane, skaterConfig.AverageSplitTime, skaterConfig.Times);
             race.Skaters.Add(skater);
         }
         
@@ -41,6 +41,13 @@ public class RaceEngine
     /// </summary>
     public double CalculateLapTime(Skater skater, int lapNumber, bool isHalfLap = false)
     {
+        // If skater has explicit times, use them directly
+        if (skater.UsesExplicitTimes)
+        {
+            return GetExplicitLapTime(skater, lapNumber, isHalfLap);
+        }
+        
+        // Otherwise, use the existing average time logic with variability
         var baseTime = skater.AverageSplitTime;
         
         // Apply lap-specific multipliers
@@ -77,6 +84,37 @@ public class RaceEngine
         variedTime += millisecondPrecision;
         
         return Math.Max(variedTime, 1.0); // Ensure minimum 1 second
+    }
+    
+    /// <summary>
+    /// Gets the explicit lap time for a skater, handling half laps appropriately
+    /// </summary>
+    private double GetExplicitLapTime(Skater skater, int lapNumber, bool isHalfLap)
+    {
+        if (skater.ExplicitTimes == null || skater.ExplicitTimes.Count == 0)
+        {
+            throw new InvalidOperationException($"Skater in lane {skater.Lane} has no explicit times configured");
+        }
+        
+        // For half lap races, the first lap (lap 0) is a half lap
+        if (isHalfLap && lapNumber == 0)
+        {
+            // Use the first explicit time for the half lap
+            return skater.ExplicitTimes[0];
+        }
+        
+        // For regular laps, use the appropriate index
+        // If it's a half lap race, skip the first time (used for half lap) and use subsequent times
+        var timeIndex = isHalfLap ? lapNumber : lapNumber - 1;
+        
+        // Ensure we don't go beyond the available times
+        if (timeIndex >= skater.ExplicitTimes.Count)
+        {
+            // If we run out of explicit times, fall back to the last available time
+            return skater.ExplicitTimes[^1];
+        }
+        
+        return skater.ExplicitTimes[timeIndex];
     }
     
     /// <summary>
