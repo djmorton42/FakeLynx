@@ -49,8 +49,6 @@ class Program
             // Check if race is finished - wait for all events to be processed
             if (IsRaceFinished())
             {
-                // Process any remaining events to ensure all laps are completed
-                _raceTimer.ProcessAllRemainingEvents();
                 break;
             }
 
@@ -299,11 +297,27 @@ class Program
                 var delayMs = _currentConfig.Race.DualTransponder.DelayMilliseconds;
                 await Task.Delay(TimeSpan.FromMilliseconds(delayMs));
                 
-                // Send the same packet again (second transponder)
+                // Create a new LapTime with slightly later timestamp for second transponder
+                var delayedLapTime = new LapTime(
+                    lapTime.SkaterLane,
+                    lapTime.LapNumber,
+                    lapTime.TimeInSeconds,
+                    lapTime.Timestamp.AddMilliseconds(delayMs),
+                    lapTime.IsHalfLap
+                );
+                
+                var delayedPacket = _packetSerializer.CreateSplitTimePacket(delayedLapTime, useSyncOk: true);
+                var delayedPacketData = _packetSerializer.SerializePacket(delayedPacket);
+                var delayedPacketString = System.Text.Encoding.UTF8.GetString(delayedPacketData).Trim();
+                
+                // Display packet content for second transponder
+                Console.WriteLine($"  -> Packet: {delayedPacketString}");
+                
+                // Send the delayed packet (second transponder)
                 if (_tcpClient?.Connected == true)
                 {
                     var stream = _tcpClient.GetStream();
-                    stream.Write(packetData, 0, packetData.Length);
+                    stream.Write(delayedPacketData, 0, delayedPacketData.Length);
                     Console.WriteLine($"  -> Sent to FinishLynx (Transponder 2) - {delayMs}ms delay");
                 }
                 else
@@ -342,6 +356,7 @@ class Program
                 var packetData = _packetSerializer.SerializePacket(packet);
                 var packetString = System.Text.Encoding.UTF8.GetString(packetData).Trim();
                 
+                // Display first packet
                 Console.WriteLine($"  -> Start crossing - Lane {skater.Lane}: {packetString}");
                 
                 // Send first packet (first transponder)
@@ -362,11 +377,27 @@ class Program
                     var delayMs = _currentConfig.Race.DualTransponder.DelayMilliseconds;
                     await Task.Delay(TimeSpan.FromMilliseconds(delayMs));
                     
-                    // Send the same packet again (second transponder)
+                    // Create a delayed packet with slightly later timestamp for second transponder
+                    var delayedStartLapTime = new LapTime(
+                        skater.Lane,
+                        0, // Start line crossing is lap 0
+                        0.0, // No time for start line crossing
+                        startTime.AddMilliseconds(delayMs),
+                        false // Not a half lap
+                    );
+                    
+                    var delayedPacket = _packetSerializer.CreateSplitTimePacket(delayedStartLapTime, useSyncOk: true);
+                    var delayedPacketData = _packetSerializer.SerializePacket(delayedPacket);
+                    var delayedPacketString = System.Text.Encoding.UTF8.GetString(delayedPacketData).Trim();
+                    
+                    // Display second packet
+                    Console.WriteLine($"  -> Start crossing - Lane {skater.Lane}: {delayedPacketString}");
+                    
+                    // Send the delayed packet (second transponder)
                     if (_tcpClient?.Connected == true)
                     {
                         var stream = _tcpClient.GetStream();
-                        stream.Write(packetData, 0, packetData.Length);
+                        stream.Write(delayedPacketData, 0, delayedPacketData.Length);
                         Console.WriteLine($"  -> Sent to FinishLynx (Transponder 2) - {delayMs}ms delay");
                     }
                     else
@@ -396,11 +427,12 @@ class Program
     {
         if (_currentRace == null) return false;
         
-        // Check if all skaters are finished AND all scheduled events have been processed
+        // Check if all skaters are finished
         var allSkatersFinished = _currentRace.Skaters.All(s => s.IsFinished);
-        var remainingEvents = _raceTimer?.GetRemainingEvents() ?? new List<TimerEvent>();
         
-        return allSkatersFinished && remainingEvents.Count == 0;
+        // Only consider the race finished if all skaters are finished
+        // The remaining events will be processed naturally by the timer
+        return allSkatersFinished;
     }
 
     private static void DisplayFinalResults()

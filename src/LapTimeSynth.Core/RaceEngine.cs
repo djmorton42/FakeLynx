@@ -37,7 +37,7 @@ public class RaceEngine
     }
     
     /// <summary>
-    /// Calculates the next lap time for a skater with variability
+    /// Calculates the next lap time for a skater with realistic variability
     /// </summary>
     public double CalculateLapTime(Skater skater, int lapNumber, bool isHalfLap = false)
     {
@@ -57,29 +57,24 @@ public class RaceEngine
         var complexSeed = GenerateComplexSeed(skater, lapNumber);
         var skaterRandom = new Random(complexSeed);
         
-        // Multiple layers of randomness for better distribution
-        var primaryVariability = GetPrimaryVariability(skaterRandom);
-        var secondaryVariability = GetSecondaryVariability(skaterRandom);
-        var microVariability = GetMicroVariability(skaterRandom);
+        // Realistic variability: -1 second (best case) to +3 seconds (worst case)
+        var timeVariation = GetRealisticTimeVariation(skaterRandom, baseTime);
+        var variedTime = baseTime + timeVariation;
         
-        // Combine all variability sources
-        var totalVariability = primaryVariability + secondaryVariability + microVariability;
-        var variedTime = baseTime * (1 + totalVariability);
-        
-        // Add performance trends with more variation
-        var performanceTrend = GetPerformanceTrend(skater.Lane, skaterRandom);
+        // Add performance trends with realistic variation
+        var performanceTrend = GetRealisticPerformanceTrend(skater.Lane, skaterRandom);
         variedTime *= performanceTrend;
         
-        // Occasional extreme laps with more realistic distribution
-        if (skaterRandom.NextDouble() < 0.08) // 8% chance (increased from 5%)
+        // Occasional extreme laps with realistic constraints
+        if (skaterRandom.NextDouble() < 0.05) // 5% chance of extreme lap
         {
-            var extremeMultiplier = GetExtremeLapMultiplier(skaterRandom);
-            variedTime *= extremeMultiplier;
+            var extremeVariation = GetExtremeLapVariation(skaterRandom, baseTime);
+            variedTime = baseTime + extremeVariation;
         }
         
-        // Add final micro-adjustment for more realistic precision
-        var finalAdjustment = (skaterRandom.NextDouble() - 0.5) * 0.01; // ±0.5% final adjustment
-        variedTime *= (1 + finalAdjustment);
+        // Add millisecond-level precision
+        var millisecondPrecision = GetMillisecondPrecision(skaterRandom);
+        variedTime += millisecondPrecision;
         
         return Math.Max(variedTime, 1.0); // Ensure minimum 1 second
     }
@@ -100,72 +95,77 @@ public class RaceEngine
     }
     
     /// <summary>
-    /// Primary variability - main random component
+    /// Gets realistic time variation: -1 second (best) to +3 seconds (worst)
     /// </summary>
-    private double GetPrimaryVariability(Random random)
+    private double GetRealisticTimeVariation(Random random, double baseTime)
     {
-        // Use normal distribution approximation for more realistic variability
-        var u1 = random.NextDouble();
-        var u2 = random.NextDouble();
-        var normal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
+        // Use a weighted distribution that favors slower times (more realistic)
+        var randomValue = random.NextDouble();
         
-        // Scale to our variability percentage
-        return normal * (_variabilityPercentage / 3.0); // Divide by 3 to account for multiple layers
+        if (randomValue < 0.1) // 10% chance of being faster (up to 1 second better)
+        {
+            return -random.NextDouble() * 1.0; // 0 to -1 second
+        }
+        else if (randomValue < 0.3) // 20% chance of being slightly faster (0 to 0.5 seconds better)
+        {
+            return -random.NextDouble() * 0.5; // 0 to -0.5 seconds
+        }
+        else if (randomValue < 0.6) // 30% chance of being close to average (within 0.5 seconds)
+        {
+            return (random.NextDouble() - 0.5) * 1.0; // -0.5 to +0.5 seconds
+        }
+        else if (randomValue < 0.85) // 25% chance of being slower (0.5 to 2 seconds slower)
+        {
+            return 0.5 + random.NextDouble() * 1.5; // 0.5 to 2.0 seconds
+        }
+        else // 15% chance of being much slower (2 to 3 seconds slower)
+        {
+            return 2.0 + random.NextDouble() * 1.0; // 2.0 to 3.0 seconds
+        }
     }
     
     /// <summary>
-    /// Secondary variability - additional random component
+    /// Gets realistic performance trend with small variation
     /// </summary>
-    private double GetSecondaryVariability(Random random)
+    private double GetRealisticPerformanceTrend(int lane, Random random)
     {
-        // Additional random component with different distribution
-        var value = random.NextDouble() * (_variabilityPercentage / 2.0) - (_variabilityPercentage / 4.0);
-        return value;
-    }
-    
-    /// <summary>
-    /// Micro variability - small random adjustments
-    /// </summary>
-    private double GetMicroVariability(Random random)
-    {
-        // Very small random adjustments for more realistic precision
-        return (random.NextDouble() - 0.5) * (_variabilityPercentage / 4.0);
-    }
-    
-    /// <summary>
-    /// Gets a performance trend for a skater with more variation
-    /// </summary>
-    private double GetPerformanceTrend(int lane, Random random)
-    {
-        // More varied performance trends
-        var baseTrend = 0.92 + (random.NextDouble() * 0.16); // 92% to 108% of average
+        // Small performance variation: 98% to 102% of average
+        var baseTrend = 0.98 + (random.NextDouble() * 0.04);
         
-        // Add some lane-specific bias but with randomness
-        var laneBias = (lane % 3 - 1) * 0.02; // Slight bias based on lane position
+        // Add tiny lane-specific bias
+        var laneBias = (lane % 2 == 0 ? 1 : -1) * 0.005; // ±0.5% bias
         return baseTrend + laneBias;
     }
     
     /// <summary>
-    /// Gets extreme lap multiplier with more realistic distribution
+    /// Gets extreme lap variation with realistic constraints
     /// </summary>
-    private double GetExtremeLapMultiplier(Random random)
+    private double GetExtremeLapVariation(Random random, double baseTime)
     {
-        // More varied extreme lap distribution
         var extremeType = random.NextDouble();
-        if (extremeType < 0.3) // 30% chance of great lap
+        
+        if (extremeType < 0.3) // 30% chance of great lap (up to 1.5 seconds better)
         {
-            return 0.80 + (random.NextDouble() * 0.15); // 80% to 95% (great lap)
+            return -random.NextDouble() * 1.5; // 0 to -1.5 seconds
         }
-        else if (extremeType < 0.6) // 30% chance of bad lap
+        else if (extremeType < 0.6) // 30% chance of bad lap (1.5 to 4 seconds slower)
         {
-            return 1.10 + (random.NextDouble() * 0.15); // 110% to 125% (bad lap)
+            return 1.5 + random.NextDouble() * 2.5; // 1.5 to 4.0 seconds
         }
-        else // 40% chance of very extreme lap
+        else // 40% chance of very extreme lap (4 to 6 seconds slower)
         {
-            return random.NextDouble() < 0.5 ? 
-                0.70 + (random.NextDouble() * 0.10) : // 70% to 80% (exceptional lap)
-                1.20 + (random.NextDouble() * 0.20);  // 120% to 140% (terrible lap)
+            return 4.0 + random.NextDouble() * 2.0; // 4.0 to 6.0 seconds
         }
+    }
+    
+    /// <summary>
+    /// Adds millisecond-level precision to lap times
+    /// </summary>
+    private double GetMillisecondPrecision(Random random)
+    {
+        // Add random milliseconds (0-999ms) for realistic precision
+        var milliseconds = random.Next(0, 1000);
+        return milliseconds / 1000.0; // Convert to seconds
     }
     
     /// <summary>
@@ -175,11 +175,12 @@ public class RaceEngine
     {
         if (race.HasHalfLap)
         {
-            return skater.CurrentLap >= race.Laps + 0.5; // Half lap counts as 0.5
+            // For half lap races, finish after completing the half lap (4.5 laps = 5 events)
+            return skater.CurrentLap > race.Laps + 0.5;
         }
         else
         {
-            return skater.CurrentLap >= race.Laps;
+            return skater.CurrentLap > race.Laps;
         }
     }
     
