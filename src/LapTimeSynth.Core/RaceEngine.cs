@@ -96,8 +96,8 @@ public class RaceEngine
             throw new InvalidOperationException($"Skater in lane {skater.Lane} has no explicit times configured");
         }
         
-        // For half lap races, the first lap (lap 0) is a half lap
-        if (isHalfLap && lapNumber == 0)
+        // For half lap races, the first lap (lap 1) is a half lap
+        if (isHalfLap && lapNumber == 1)
         {
             // Use the first explicit time for the half lap
             return skater.ExplicitTimes[0];
