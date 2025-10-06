@@ -1,5 +1,5 @@
 race:
-  laps: 13.5
+  laps: 4.5
   tcp:
     host: localhost
     port: 2002

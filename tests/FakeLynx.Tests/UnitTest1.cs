@@ -1,4 +1,4 @@
-﻿namespace LapTimeSynth.Tests;
+﻿namespace FakeLynx.Tests;
 
 public class UnitTest1
 {

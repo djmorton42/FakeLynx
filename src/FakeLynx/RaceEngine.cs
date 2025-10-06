@@ -1,7 +1,6 @@
-using LapTimeSynth.Models;
 using System.Threading;
 
-namespace LapTimeSynth.Core;
+namespace FakeLynx;
 
 /// <summary>
 /// Core race engine that manages race logic, timing, and variability

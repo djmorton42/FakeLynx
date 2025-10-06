@@ -19,10 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\LapTimeSynth.Core\LapTimeSynth.Core.csproj" />
-    <ProjectReference Include="..\..\src\LapTimeSynth.Models\LapTimeSynth.Models.csproj" />
-    <ProjectReference Include="..\..\src\LapTimeSynth.Protocol\LapTimeSynth.Protocol.csproj" />
-    <ProjectReference Include="..\..\src\LapTimeSynth.Configuration\LapTimeSynth.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\FakeLynx\FakeLynx.csproj" />
   </ItemGroup>
 
 </Project>

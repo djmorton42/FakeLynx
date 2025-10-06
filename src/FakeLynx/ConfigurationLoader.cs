@@ -1,8 +1,7 @@
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using LapTimeSynth.Models;
 
-namespace LapTimeSynth.Configuration;
+namespace FakeLynx;
 
 /// <summary>
 /// Loads race configuration from YAML files

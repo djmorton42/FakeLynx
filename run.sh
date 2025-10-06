@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Lap Time Synthesizer - Run Script
+# FakeLynx - Run Script
 # This script builds and runs the application with a race configuration file
 
 set -e  # Exit on any error
@@ -53,8 +53,8 @@ show_usage() {
 }
 
 # Check if we're in the right directory
-if [ ! -f "LapTimeSynth.sln" ]; then
-    print_error "Please run this script from the project root directory (where LapTimeSynth.sln is located)"
+if [ ! -f "FakeLynx.sln" ]; then
+    print_error "Please run this script from the project root directory (where FakeLynx.sln is located)"
     exit 1
 fi
 
@@ -92,7 +92,7 @@ if ! command -v dotnet &> /dev/null; then
 fi
 
 # Check if the application is already built
-if [ ! -d "src/LapTimeSynth/bin/Release" ] || [ ! -f "src/LapTimeSynth/bin/Release/LapTimeSynth.dll" ]; then
+if [ ! -d "src/FakeLynx/bin/Release" ] || [ ! -f "src/FakeLynx/bin/Release/FakeLynx.dll" ]; then
     print_status "Application not built yet. Building..."
 
     # Build the solution
@@ -110,14 +110,14 @@ fi
 # Display race configuration info
 print_status "Race Configuration:"
 echo "  • Config file: $CONFIG_FILE"
-echo "  • Application: src/LapTimeSynth/bin/Release/LapTimeSynth.dll"
+echo "  • Application: src/FakeLynx/bin/Release/FakeLynx.dll"
 echo
 
 # Run the application
-print_status "Starting Lap Time Synthesizer..."
+print_status "Starting FakeLynx..."
 echo
 
-dotnet run --project src/LapTimeSynth/LapTimeSynth.csproj --configuration Release -- "$CONFIG_FILE"
+dotnet run --project src/FakeLynx/FakeLynx.csproj --configuration Release -- "$CONFIG_FILE"
 
 # Check exit status
 if [ $? -eq 0 ]; then

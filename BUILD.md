@@ -18,7 +18,7 @@ This script will:
 
 The build script creates a complete deployment package in `dist/deployment/`:
 
-- **LapTimeSynth.exe** - Standalone Windows executable (68MB)
+- **FakeLynx.exe** - Standalone Windows executable (68MB)
 - **race-config.yml** - Sample race configuration
 - **run-race.bat** - Windows batch file for easy execution
 - **README-Windows.md** - Complete Windows deployment instructions
@@ -33,7 +33,7 @@ dotnet clean
 dotnet build --configuration Release
 
 # Create Windows executable
-dotnet publish src/LapTimeSynth/LapTimeSynth.csproj \
+dotnet publish src/FakeLynx/FakeLynx.csproj \
     -c Release \
     -r win-x64 \
     --self-contained true \

@@ -1,6 +1,4 @@
-using LapTimeSynth.Models;
-
-namespace LapTimeSynth.Core;
+namespace FakeLynx;
 
 /// <summary>
 /// Manages race timing and lap events

@@ -35,18 +35,18 @@ skaters:
 
 ### Basic Usage
 ```bash
-dotnet run --project src/LapTimeSynth/LapTimeSynth.csproj
+dotnet run --project src/FakeLynx/FakeLynx.csproj
 ```
 
 ### With Custom Configuration
 ```bash
-dotnet run --project src/LapTimeSynth/LapTimeSynth.csproj config/my-race.yml
+dotnet run --project src/FakeLynx/FakeLynx.csproj config/my-race.yml
 ```
 
 ### Build and Run
 ```bash
 dotnet build
-dotnet run --project src/LapTimeSynth/LapTimeSynth.csproj
+dotnet run --project src/FakeLynx/FakeLynx.csproj
 ```
 
 ## Protocol Implementation
@@ -95,13 +95,9 @@ Race results are saved to `output/race-results-YYYYMMDD-HHMMSS.txt` containing:
 
 ### Project Structure
 ```
-LapTimeSynth/
+FakeLynx/
 ├── src/
-│   ├── LapTimeSynth/              # Main console application
-│   ├── LapTimeSynth.Core/         # Race engine and timing logic
-│   ├── LapTimeSynth.Models/       # Data models
-│   ├── LapTimeSynth.Protocol/     # FinishLynx protocol implementation
-│   └── LapTimeSynth.Configuration/ # YAML configuration handling
+│   └── FakeLynx/                  # Main console application (consolidated)
 ├── config/                        # Configuration files
 ├── output/                        # Race results output
 └── tests/                         # Unit tests

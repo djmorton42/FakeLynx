@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Lap Time Synthesizer - Build and Distribution Script
+# FakeLynx - Build and Distribution Script
 # This script builds the application and creates a distributable package
 
 set -e  # Exit on any error
 
-echo "=== Lap Time Synthesizer - Build & Distribution ==="
+echo "=== FakeLynx - Build & Distribution ==="
 echo
 
 # Colors for output
@@ -33,8 +33,8 @@ print_error() {
 }
 
 # Check if we're in the right directory
-if [ ! -f "LapTimeSynth.sln" ]; then
-    print_error "Please run this script from the project root directory (where LapTimeSynth.sln is located)"
+if [ ! -f "FakeLynx.sln" ]; then
+    print_error "Please run this script from the project root directory (where FakeLynx.sln is located)"
     exit 1
 fi
 
@@ -62,7 +62,7 @@ print_success "Distribution directory created"
 
 # Build Windows executable (self-contained, no trimming for compatibility)
 print_status "Building Windows executable (self-contained)..."
-dotnet publish src/LapTimeSynth/LapTimeSynth.csproj \
+dotnet publish src/FakeLynx/FakeLynx.csproj \
     -c Release \
     -r win-x64 \
     --self-contained true \
@@ -80,7 +80,7 @@ fi
 print_status "Creating deployment package..."
 
 # Copy executable
-cp dist/win-x64-no-trim/LapTimeSynth.exe dist/deployment/
+cp dist/win-x64-no-trim/FakeLynx.exe dist/deployment/
 
 # Copy configuration files
 cp config/sample-race.yml dist/deployment/
@@ -92,18 +92,18 @@ cp README.md dist/deployment/
 # Create Windows batch file
 cat > dist/deployment/run-race.bat << 'EOF'
 @echo off
-LapTimeSynth.exe race-config.yml
+FakeLynx.exe race-config.yml
 EOF
 
 # Create Windows README
 cat > dist/deployment/README-Windows.md << 'EOF'
-# Lap Time Synthesizer - Windows Deployment
+# FakeLynx - Windows Deployment
 
 This package contains a standalone executable for simulating lap tracking data and sending it to FinishLynx timing software.
 
 ## Files Included
 
-- `LapTimeSynth.exe` - Main application executable
+- `FakeLynx.exe` - Main application executable
 - `race-config.yml` - Sample race configuration
 - `run-race.bat` - Windows batch file to run the application
 - `README-Windows.md` - This file
@@ -132,12 +132,12 @@ This package contains a standalone executable for simulating lap tracking data a
 
 ### Basic Command
 ```cmd
-LapTimeSynth.exe race-config.yml
+FakeLynx.exe race-config.yml
 ```
 
 ### Custom Configuration
 ```cmd
-LapTimeSynth.exe my-race-config.yml
+FakeLynx.exe my-race-config.yml
 ```
 
 ## Configuration
@@ -197,14 +197,14 @@ This is a testing tool for FinishLynx timing systems. For issues:
 EOF
 
 # Get executable size
-EXE_SIZE=$(ls -lh dist/deployment/LapTimeSynth.exe | awk '{print $5}')
+EXE_SIZE=$(ls -lh dist/deployment/FakeLynx.exe | awk '{print $5}')
 
 # Display summary
 echo
 print_success "=== BUILD COMPLETE ==="
 echo
 echo "Distribution package created in: dist/deployment/"
-echo "  • LapTimeSynth.exe ($EXE_SIZE)"
+echo "  • FakeLynx.exe ($EXE_SIZE)"
 echo "  • race-config.yml (race configuration)"
 echo "  • run-race.bat (Windows batch file)"
 echo "  • README-Windows.md (Windows instructions)"

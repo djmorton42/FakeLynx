@@ -1,10 +1,6 @@
-﻿using LapTimeSynth.Configuration;
-using LapTimeSynth.Core;
-using LapTimeSynth.Models;
-using LapTimeSynth.Protocol;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 
-namespace LapTimeSynth;
+namespace FakeLynx;
 
 class Program
 {

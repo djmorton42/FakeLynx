@@ -1,6 +1,4 @@
-using LapTimeSynth.Models;
-
-namespace LapTimeSynth.Protocol;
+namespace FakeLynx;
 
 /// <summary>
 /// Serializes timing packets for transmission to the FinishLynx timing device
