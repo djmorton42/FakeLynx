@@ -146,16 +146,7 @@ public class RaceTimer
             Skater = skater
         });
     }
-    
-    private Race GetRaceFromSkater(Skater skater)
-    {
-        if (_currentRace == null)
-        {
-            throw new InvalidOperationException("No race is currently active");
-        }
-        return _currentRace;
-    }
-    
+        
     /// <summary>
     /// Gets all remaining events
     /// </summary>
