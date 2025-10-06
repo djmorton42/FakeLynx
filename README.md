@@ -1,16 +1,26 @@
-# Lap Time Synthesizer
+# FakeLynx
 
-A .NET console application that simulates a lap tracking device for speed skating races. It generates realistic lap times with variability and sends timing packets to a FinishLynx timing system.
+A .NET console application that uses the Lynx Laptime Protocol to simulate races where a Lap Time
+device sends timing events to FinishLynx.
 
-## Features
+Select the 'Lynx' device type when configuring a FinishLynx LapTime device. Port 2002 is the standard
+port for these devices, but any port can be configured in the race config file.
 
-- **Realistic Race Simulation**: Supports 4.5, 9, or 13.5 lap races with 1-10 skaters
-- **FinishLynx Protocol**: Implements the exact FinishLynx LapTime Protocol for Lynx type devices
-- **Variable Lap Times**: Includes realistic variability in lap times with performance trends
-- **Half-Lap Support**: Properly handles half-lap races (0.75x multiplier for first half-lap)
-- **First Lap Logic**: First lap takes 1.25x average time for integer lap races
-- **Real-time Display**: Shows race progress and lap times in real-time
-- **Results Export**: Saves detailed race results to files
+Between 1 and 10 racers can be configured for a race and a race may contain any whole or half number
+of laps (1, 4, 4.5, 9, 13.5, etc.). Each racer can be provided with an average split time or a fixed 
+list of split times. If using the average split time, a variance will be calculated for each lap so
+that the results will vary between runs. 
+
+For races with a whole number of laps, the first lap will have a extra duration multiplier applied
+to account for the acceleration delay off of the start. For races with a half number of laps, a
+fraction of the average split time will be used to account for the shorter distance covered.
+
+For races with a whole number of laps, the racers will start at the finish line. As such, right at
+the start, the transponders will detect a passing. The FinishLynx mask settings should be 
+configured to account for this. If 'dual_transponder' mode is enabled, whenever a lap crossing is
+synthesized, two crossings will be sent, a configurable amount of time apart, to account for a
+racer wearing a transponder on each ankle.
+
 
 ## Configuration
 
@@ -18,35 +28,37 @@ The application uses YAML configuration files. See `config/sample-race.yml` for 
 
 ```yaml
 race:
-  laps: 9  # Can be 4.5, 9, or 13.5
+  laps: 9  # Could be any whole or half number (4, 4.5, 9, 13.5, etc.)
   tcp:
     host: localhost
     port: 2002
+
+  dual_transponder:
+    enabled: true # to generate two transponder events on each crossing or not
+    delay_milliseconds: 50.0 # how long between transmissions on each transponder
 
 skaters:
   - lane: 1
     average_split_time: 12.2  # seconds
   - lane: 2
     average_split_time: 11.8
-  # ... up to 10 skaters
-```
 
-## Usage
-
-### Basic Usage
-```bash
-dotnet run --project src/FakeLynx/FakeLynx.csproj
-```
-
-### With Custom Configuration
-```bash
-dotnet run --project src/FakeLynx/FakeLynx.csproj config/my-race.yml
-```
-
-### Build and Run
-```bash
-dotnet build
-dotnet run --project src/FakeLynx/FakeLynx.csproj
+# If using specific lap times
+#
+#  - lane: 1
+#    times:
+#      - 7.633
+#      - 10.267
+#      - 9.933
+#      - 9.967
+#      - 10.367
+#  - lane: 2
+#    times:
+#      - 7.433
+#      - 10.000
+#      - 9.667
+#      - 9.733
+#      - 10.167
 ```
 
 ## Protocol Implementation
@@ -77,48 +89,3 @@ The application implements the FinishLynx LapTime Protocol exactly as specified:
 ### Performance Trends
 Each skater has a consistent performance trend (95-105% of average) to create realistic race outcomes where different skaters can win on different runs.
 
-## Output
-
-### Console Output
-- Real-time race progress
-- Lap times as they occur
-- TCP packet transmission logs
-- Final standings
-
-### File Output
-Race results are saved to `output/race-results-YYYYMMDD-HHMMSS.txt` containing:
-- Race metadata
-- Complete lap time log
-- Final standings with total times
-
-## Development
-
-### Project Structure
-```
-FakeLynx/
-├── src/
-│   └── FakeLynx/                  # Main console application (consolidated)
-├── config/                        # Configuration files
-├── output/                        # Race results output
-└── tests/                         # Unit tests
-```
-
-### Building
-```bash
-dotnet build
-```
-
-### Testing
-```bash
-dotnet test
-```
-
-## Requirements
-
-- .NET 9.0 SDK
-- Windows (production) or macOS/Linux (development)
-- TCP connection to FinishLynx timing system (optional)
-
-## License
-
-This project is for testing and development purposes.
