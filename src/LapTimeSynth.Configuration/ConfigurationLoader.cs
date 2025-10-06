@@ -41,7 +41,7 @@ public class ConfigurationLoader
         
         if (!IsValidLapCount(config.Race.Laps))
         {
-            throw new InvalidOperationException($"Invalid lap count: {config.Race.Laps}. Must be 4.5, 9, or 13.5");
+            throw new InvalidOperationException($"Invalid lap count: {config.Race.Laps}. Must either be a whole number or end with .5 (4, 4.5, 9, 13.5, etc.)");
         }
         
         if (config.Skaters == null || config.Skaters.Count == 0)
@@ -95,6 +95,6 @@ public class ConfigurationLoader
     
     private bool IsValidLapCount(double laps)
     {
-        return laps == 4.5 || laps == 9 || laps == 13.5;
+        return laps % 1 == 0 || laps % 1 == 0.5;
     }
 }

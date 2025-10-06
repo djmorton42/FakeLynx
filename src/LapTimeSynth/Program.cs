@@ -142,7 +142,14 @@ class Program
 
             // Second pause - ready to start race
             Console.WriteLine();
-            Console.WriteLine("Connection established. Press any key to start the race...");
+            if (_tcpClient?.Connected == true)
+            {
+                Console.WriteLine("Connection established. Press any key to start the race...");
+            }
+            else
+            {
+                Console.WriteLine("Running in offline mode (no TCP connection). Press any key to start the race...");
+            }
             Console.ReadKey(true);
             Console.WriteLine();
 
