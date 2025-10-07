@@ -146,18 +146,48 @@ Edit `race-config.yml` to customize your race:
 
 ```yaml
 race:
-  laps: 9  # Can be 4.5, 9, or 13.5
+  laps: 4.5  # Can be any whole or half number of laps (4, 4.5, 9, 13.5, etc.)
   tcp:
     host: localhost
     port: 2002
+  dual_transponder:
+    enabled: true  # Record two passings for each lap crossing (one for each ankle)
+    delay_milliseconds: 50.0  # Delay between first and second transponder packets
 
 skaters:
   - lane: 1
-    average_split_time: 12.2  # seconds
+    average_split_time: 12.2  # seconds (use this for random lap times around the average)
   - lane: 2
     average_split_time: 11.8
   # ... up to 10 skaters
+
+# Alternative: Specify exact lap times instead of averages
+# skaters:
+#   - lane: 1
+#     times:
+#       - 7.633
+#       - 10.267
+#       - 9.933
+#       - 9.967
+#       - 10.367
+#   - lane: 2
+#     times:
+#       - 7.433
+#       - 10.000
+#       - 9.667
+#       - 9.733
+#       - 10.167
 ```
+
+### Configuration Options
+
+- **laps**: Number of laps (supports half laps like 4.5, 9, 13.5)
+- **dual_transponder**: 
+  - `enabled`: When true, sends two packets per lap crossing (simulating both ankle transponders)
+  - `delay_milliseconds`: Time delay between the two transponder packets
+- **skaters**: Define up to 10 skaters with either:
+  - `average_split_time`: Random lap times generated around this average
+  - `times`: Exact lap times array (uncomment and use instead of average_split_time)
 
 ## Protocol
 
@@ -172,32 +202,20 @@ The application sends FinishLynx protocol packets:
 - **Files**: Race results saved to `output/` folder
 - **FinishLynx**: Receives timing packets via TCP
 
-## Troubleshooting
-
-### "Connection refused" Error
-- Make sure FinishLynx is running
-- Check that FinishLynx is listening on port 2002
-- Verify the host/port in your configuration file
-
-### Application Won't Start
-- Ensure you're running Windows 10 or later
-- Try running from Command Prompt to see error messages
-
-### No Packets Received in FinishLynx
-- Check FinishLynx LapTime Device is in "Internal Sync" mode
-- Verify the TCP port configuration
-- Check Windows Firewall settings
-
-## Support
-
-This is a testing tool for FinishLynx timing systems. For issues:
-1. Check the console output for error messages
-2. Verify FinishLynx configuration
-3. Test with a simple race configuration first
 EOF
+
+# Create zip file in root directory
+print_status "Creating zip file..."
+cd dist/deployment
+zip -r ../../FakeLynx-win-x64.zip .
+cd ../..
+print_success "Zip file created: FakeLynx-win-x64.zip"
 
 # Get executable size
 EXE_SIZE=$(ls -lh dist/deployment/FakeLynx.exe | awk '{print $5}')
+
+# Get zip file size
+ZIP_SIZE=$(ls -lh FakeLynx-win-x64.zip | awk '{print $5}')
 
 # Display summary
 echo
@@ -209,8 +227,11 @@ echo "  • race-config.yml (race configuration)"
 echo "  • run-race.bat (Windows batch file)"
 echo "  • README-Windows.md (Windows instructions)"
 echo
+echo "Zip file created: FakeLynx-win-x64.zip ($ZIP_SIZE)"
+echo
 echo "To deploy:"
-echo "  1. Copy the entire 'dist/deployment/' folder to your Windows computer"
-echo "  2. Double-click 'run-race.bat' to run the application"
+echo "  1. Copy the entire 'dist/deployment/' folder to your Windows computer, OR"
+echo "  2. Use the zip file 'FakeLynx-win-x64.zip' and extract it on Windows"
+echo "  3. Double-click 'run-race.bat' to run the application"
 echo
 print_success "Ready for deployment!"

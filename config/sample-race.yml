@@ -1,10 +1,10 @@
 race:
-  laps: 4.5  # Can be 4.5, 9, or 13.5
+  laps: 4.5  # Can be any whole or half number (4, 4.5, 9, 13.5, etc.)
   tcp:
     host: localhost
     port: 2002
   dual_transponder:
-    enabled: true
+    enabled: true # Record two passings for each lap crossing (one for each ankle)
     delay_milliseconds: 50.0  # Delay between first and second transponder packets
 
 skaters:
