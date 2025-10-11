@@ -88,10 +88,37 @@ class Program
         // The race engine will be reused to create a new race
     }
 
+    private static void DisplayVersionInfo()
+    {
+        var versionFilePath = "VERSION.txt";
+        
+        if (File.Exists(versionFilePath))
+        {
+            try
+            {
+                var versionNumber = File.ReadAllText(versionFilePath).Trim();
+                Console.WriteLine($"Running FakeLynx v{versionNumber}");
+            }
+            catch (Exception)
+            {
+                // If we can't read the version file, fall back to no version
+                Console.WriteLine("Running FakeLynx");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Running FakeLynx");
+        }
+    }
+
     static async Task Main(string[] args)
     {
         try
         {
+            // Display version information
+            DisplayVersionInfo();
+            Console.WriteLine();
+            
             Console.WriteLine("=== Lap Time Synthesizer ===");
             Console.WriteLine();
 
