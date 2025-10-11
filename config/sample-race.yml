@@ -7,7 +7,7 @@ race:
     enabled: true # Record two passings for each lap crossing (one for each ankle)
     delay_milliseconds: 50.0  # Delay between first and second transponder packets
 
-skaters:
+racers:
   - lane: 1
     average_split_time: 12.2  # seconds
   - lane: 2

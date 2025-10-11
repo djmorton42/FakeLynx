@@ -26,28 +26,28 @@ public class RaceEngine
     {
         var race = new Race(config.Race.Laps);
         
-        foreach (var skaterConfig in config.Skaters)
+        foreach (var racerConfig in config.Racers)
         {
-            var skater = new Skater(skaterConfig.Lane, skaterConfig.AverageSplitTime, skaterConfig.Times);
-            race.Skaters.Add(skater);
+            var racer = new Racer(racerConfig.Lane, racerConfig.AverageSplitTime, racerConfig.Times);
+            race.Racers.Add(racer);
         }
         
         return race;
     }
     
     /// <summary>
-    /// Calculates the next lap time for a skater with realistic variability
+    /// Calculates the next lap time for a racer with realistic variability
     /// </summary>
-    public double CalculateLapTime(Skater skater, int lapNumber, bool isHalfLap = false)
+    public double CalculateLapTime(Racer racer, int lapNumber, bool isHalfLap = false)
     {
-        // If skater has explicit times, use them directly
-        if (skater.UsesExplicitTimes)
+        // If racer has explicit times, use them directly
+        if (racer.UsesExplicitTimes)
         {
-            return GetExplicitLapTime(skater, lapNumber, isHalfLap);
+            return GetExplicitLapTime(racer, lapNumber, isHalfLap);
         }
         
         // Otherwise, use the existing average time logic with variability
-        var baseTime = skater.AverageSplitTime;
+        var baseTime = racer.AverageSplitTime;
         
         // Apply lap-specific multipliers
         if (isHalfLap)
@@ -60,46 +60,46 @@ public class RaceEngine
         }
         
         // Create a more complex seed using multiple entropy sources
-        var complexSeed = GenerateComplexSeed(skater, lapNumber);
-        var skaterRandom = new Random(complexSeed);
+        var complexSeed = GenerateComplexSeed(racer, lapNumber);
+        var racerRandom = new Random(complexSeed);
         
         // Realistic variability: -1 second (best case) to +3 seconds (worst case)
-        var timeVariation = GetRealisticTimeVariation(skaterRandom, baseTime);
+        var timeVariation = GetRealisticTimeVariation(racerRandom, baseTime);
         var variedTime = baseTime + timeVariation;
         
         // Add performance trends with realistic variation
-        var performanceTrend = GetRealisticPerformanceTrend(skater.Lane, skaterRandom);
+        var performanceTrend = GetRealisticPerformanceTrend(racer.Lane, racerRandom);
         variedTime *= performanceTrend;
         
         // Occasional extreme laps with realistic constraints
-        if (skaterRandom.NextDouble() < 0.05) // 5% chance of extreme lap
+        if (racerRandom.NextDouble() < 0.05) // 5% chance of extreme lap
         {
-            var extremeVariation = GetExtremeLapVariation(skaterRandom, baseTime);
+            var extremeVariation = GetExtremeLapVariation(racerRandom, baseTime);
             variedTime = baseTime + extremeVariation;
         }
         
         // Add millisecond-level precision
-        var millisecondPrecision = GetMillisecondPrecision(skaterRandom);
+        var millisecondPrecision = GetMillisecondPrecision(racerRandom);
         variedTime += millisecondPrecision;
         
         return Math.Max(variedTime, 1.0); // Ensure minimum 1 second
     }
     
     /// <summary>
-    /// Gets the explicit lap time for a skater, handling half laps appropriately
+    /// Gets the explicit lap time for a racer, handling half laps appropriately
     /// </summary>
-    private double GetExplicitLapTime(Skater skater, int lapNumber, bool isHalfLap)
+    private double GetExplicitLapTime(Racer racer, int lapNumber, bool isHalfLap)
     {
-        if (skater.ExplicitTimes == null || skater.ExplicitTimes.Count == 0)
+        if (racer.ExplicitTimes == null || racer.ExplicitTimes.Count == 0)
         {
-            throw new InvalidOperationException($"Skater in lane {skater.Lane} has no explicit times configured");
+            throw new InvalidOperationException($"Racer in lane {racer.Lane} has no explicit times configured");
         }
         
         // For half lap races, the first lap (lap 1) is a half lap
         if (isHalfLap && lapNumber == 1)
         {
             // Use the first explicit time for the half lap
-            return skater.ExplicitTimes[0];
+            return racer.ExplicitTimes[0];
         }
         
         // For regular laps, use the appropriate index
@@ -107,23 +107,23 @@ public class RaceEngine
         var timeIndex = isHalfLap ? lapNumber : lapNumber - 1;
         
         // Ensure we don't go beyond the available times
-        if (timeIndex >= skater.ExplicitTimes.Count)
+        if (timeIndex >= racer.ExplicitTimes.Count)
         {
             // If we run out of explicit times, fall back to the last available time
-            return skater.ExplicitTimes[^1];
+            return racer.ExplicitTimes[^1];
         }
         
-        return skater.ExplicitTimes[timeIndex];
+        return racer.ExplicitTimes[timeIndex];
     }
     
     /// <summary>
     /// Generates a complex seed using multiple entropy sources
     /// </summary>
-    private int GenerateComplexSeed(Skater skater, int lapNumber)
+    private int GenerateComplexSeed(Racer racer, int lapNumber)
     {
         // Use multiple entropy sources for better randomness
         var timeComponent = (int)(DateTime.Now.Ticks & 0x7FFFFFFF);
-        var laneComponent = skater.Lane * 7919; // Prime number for better distribution
+        var laneComponent = racer.Lane * 7919; // Prime number for better distribution
         var lapComponent = lapNumber * 65537; // Another prime
         var baseComponent = _baseSeed;
         var counterComponent = Interlocked.Increment(ref _lapCounter) * 9973; // Another prime
@@ -206,39 +206,39 @@ public class RaceEngine
     }
     
     /// <summary>
-    /// Determines if a skater has finished the race
+    /// Determines if a racer has finished the race
     /// </summary>
-    public bool IsSkaterFinished(Skater skater, Race race)
+    public bool IsRacerFinished(Racer racer, Race race)
     {
         if (race.HasHalfLap)
         {
             // For half lap races, finish after completing the half lap (4.5 laps = 5 events)
-            return skater.CurrentLap > race.Laps + 0.5;
+            return racer.CurrentLap > race.Laps + 0.5;
         }
         else
         {
-            return skater.CurrentLap > race.Laps;
+            return racer.CurrentLap > race.Laps;
         }
     }
     
     /// <summary>
-    /// Gets the next lap number for a skater
+    /// Gets the next lap number for a racer
     /// </summary>
-    public int GetNextLapNumber(Skater skater, Race race)
+    public int GetNextLapNumber(Racer racer, Race race)
     {
-        if (race.HasHalfLap && skater.CurrentLap == 0)
+        if (race.HasHalfLap && racer.CurrentLap == 0)
         {
             return 0; // Half lap is lap 0
         }
         
-        return skater.CurrentLap + 1;
+        return racer.CurrentLap + 1;
     }
     
     /// <summary>
     /// Determines if the next lap is a half lap
     /// </summary>
-    public bool IsNextLapHalfLap(Skater skater, Race race)
+    public bool IsNextLapHalfLap(Racer racer, Race race)
     {
-        return race.HasHalfLap && skater.CurrentLap == 0;
+        return race.HasHalfLap && racer.CurrentLap == 0;
     }
 }

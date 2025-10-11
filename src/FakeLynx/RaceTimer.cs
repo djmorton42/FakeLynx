@@ -25,16 +25,16 @@ public class RaceTimer
         _currentRace = race;
         race.StartTime = DateTime.Now;
         
-        foreach (var skater in race.Skaters)
+        foreach (var racer in race.Racers)
         {
-            ScheduleSkaterLaps(skater, race);
+            ScheduleRacerLaps(racer, race);
         }
     }
     
     /// <summary>
-    /// Schedules all lap events for a skater
+    /// Schedules all lap events for a racer
     /// </summary>
-    private void ScheduleSkaterLaps(Skater skater, Race race)
+    private void ScheduleRacerLaps(Racer racer, Race race)
     {
         var currentTime = DateTime.Now;
         var totalLaps = race.HasHalfLap ? (int)(race.Laps + 0.5) : (int)race.Laps;
@@ -45,12 +45,12 @@ public class RaceTimer
             var isHalfLap = race.HasHalfLap && i == 0;
             
             // Calculate cumulative time for this lap
-            var cumulativeTime = CalculateCumulativeTime(skater, i, race);
+            var cumulativeTime = CalculateCumulativeTime(racer, i, race);
             var scheduledTime = currentTime.AddSeconds(cumulativeTime);
             
             var timerEvent = new TimerEvent
             {
-                Skater = skater,
+                Racer = racer,
                 LapNumber = lapNumber,
                 ScheduledTime = scheduledTime,
                 IsHalfLap = isHalfLap
@@ -66,14 +66,14 @@ public class RaceTimer
     /// <summary>
     /// Calculates cumulative time for a lap number
     /// </summary>
-    private double CalculateCumulativeTime(Skater skater, int lapIndex, Race race)
+    private double CalculateCumulativeTime(Racer racer, int lapIndex, Race race)
     {
         double cumulativeTime = 0;
         
         for (int i = 0; i <= lapIndex; i++)
         {
             var isHalfLap = race.HasHalfLap && i == 0;
-            var lapTime = _raceEngine.CalculateLapTime(skater, i + 1, isHalfLap);
+            var lapTime = _raceEngine.CalculateLapTime(racer, i + 1, isHalfLap);
             cumulativeTime += lapTime;
         }
         
@@ -125,17 +125,17 @@ public class RaceTimer
     {
         if (timerEvent.Processed) return;
         
-        var skater = timerEvent.Skater;
+        var racer = timerEvent.Racer;
         var lapTime = new LapTime(
-            skater.Lane,
+            racer.Lane,
             timerEvent.LapNumber,
-            _raceEngine.CalculateLapTime(skater, timerEvent.LapNumber, timerEvent.IsHalfLap),
+            _raceEngine.CalculateLapTime(racer, timerEvent.LapNumber, timerEvent.IsHalfLap),
             currentTime,
             timerEvent.IsHalfLap
         );
         
-        skater.LapTimes.Add(lapTime);
-        skater.CurrentLap = timerEvent.LapNumber + 1;
+        racer.LapTimes.Add(lapTime);
+        racer.CurrentLap = timerEvent.LapNumber + 1;
         
         timerEvent.Processed = true;
         
@@ -143,7 +143,7 @@ public class RaceTimer
         LapCompleted?.Invoke(this, new LapCompletedEventArgs
         {
             LapTime = lapTime,
-            Skater = skater
+            Racer = racer
         });
     }
         
@@ -164,7 +164,7 @@ public class RaceTimer
 /// </summary>
 public class TimerEvent
 {
-    public Skater Skater { get; set; } = null!;
+    public Racer Racer { get; set; } = null!;
     public int LapNumber { get; set; }
     public DateTime ScheduledTime { get; set; }
     public bool IsHalfLap { get; set; }
@@ -177,5 +177,5 @@ public class TimerEvent
 public class LapCompletedEventArgs : EventArgs
 {
     public LapTime LapTime { get; set; } = null!;
-    public Skater Skater { get; set; } = null!;
+    public Racer Racer { get; set; } = null!;
 }

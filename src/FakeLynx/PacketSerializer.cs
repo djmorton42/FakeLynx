@@ -68,7 +68,7 @@ public class PacketSerializer
             useSyncOk ? SyncStatus.SyncOk : SyncStatus.NoSync,
             OpCode.S,
             lapTime.Timestamp,
-            lapTime.SkaterLane
+            lapTime.RacerLane
         );
     }
     

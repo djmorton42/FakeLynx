@@ -1,19 +1,19 @@
 namespace FakeLynx;
 
 /// <summary>
-/// Represents a single lap time for a skater
+/// Represents a single lap time for a racer
 /// </summary>
 public class LapTime
 {
-    public int SkaterLane { get; set; }
+    public int RacerLane { get; set; }
     public int LapNumber { get; set; }
     public double TimeInSeconds { get; set; }
     public DateTime Timestamp { get; set; }
     public bool IsHalfLap { get; set; } = false;
     
-    public LapTime(int skaterLane, int lapNumber, double timeInSeconds, DateTime timestamp, bool isHalfLap = false)
+    public LapTime(int racerLane, int lapNumber, double timeInSeconds, DateTime timestamp, bool isHalfLap = false)
     {
-        SkaterLane = skaterLane;
+        RacerLane = racerLane;
         LapNumber = lapNumber;
         TimeInSeconds = timeInSeconds;
         Timestamp = timestamp;
@@ -27,7 +27,7 @@ public class LapTime
 public class Race
 {
     public double Laps { get; set; } // Can be 4.5, 9, or 13.5
-    public List<Skater> Skaters { get; set; } = new();
+    public List<Racer> Racers { get; set; } = new();
     public DateTime StartTime { get; set; }
     public DateTime? EndTime { get; set; }
     public bool IsFinished { get; set; } = false;
@@ -52,7 +52,7 @@ public class Race
 public class RaceConfiguration
 {
     public RaceSettings Race { get; set; } = new();
-    public List<SkaterConfiguration> Skaters { get; set; } = new();
+    public List<RacerConfiguration> Racers { get; set; } = new();
 }
 
 public class RaceSettings
@@ -68,7 +68,7 @@ public class TcpSettings
     public int Port { get; set; } = 2002;
 }
 
-public class SkaterConfiguration
+public class RacerConfiguration
 {
     public int Lane { get; set; }
     public double AverageSplitTime { get; set; }
@@ -82,9 +82,9 @@ public class DualTransponderSettings
 }
 
 /// <summary>
-/// Represents a skater in the race
+/// Represents a racer in the race
 /// </summary>
-public class Skater
+public class Racer
 {
     public int Lane { get; set; }
     public double AverageSplitTime { get; set; } // in seconds
@@ -94,13 +94,13 @@ public class Skater
     public DateTime? FinishTime { get; set; }
     public int CurrentLap { get; set; } = 0;
     
-    public Skater(int lane, double averageSplitTime)
+    public Racer(int lane, double averageSplitTime)
     {
         Lane = lane;
         AverageSplitTime = averageSplitTime;
     }
     
-    public Skater(int lane, double averageSplitTime, List<double>? explicitTimes)
+    public Racer(int lane, double averageSplitTime, List<double>? explicitTimes)
     {
         Lane = lane;
         AverageSplitTime = averageSplitTime;
@@ -108,7 +108,7 @@ public class Skater
     }
     
     /// <summary>
-    /// Gets whether this skater uses explicit times instead of average times
+    /// Gets whether this racer uses explicit times instead of average times
     /// </summary>
     public bool UsesExplicitTimes => ExplicitTimes != null && ExplicitTimes.Count > 0;
 }

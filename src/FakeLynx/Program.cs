@@ -104,7 +104,7 @@ class Program
             // Display race information
             Console.WriteLine($"Race Configuration:");
             Console.WriteLine($"  • Distance: {config.Race.Laps} laps");
-            Console.WriteLine($"  • Number of racers: {config.Skaters.Count}");
+            Console.WriteLine($"  • Number of racers: {config.Racers.Count}");
             Console.WriteLine($"  • Target host: {config.Race.Tcp.Host}");
             Console.WriteLine($"  • Target port: {config.Race.Tcp.Port}");
             Console.WriteLine($"  • Dual transponder: {(config.Race.DualTransponder.Enabled ? "Enabled" : "Disabled")}");
@@ -121,7 +121,7 @@ class Program
 
             // Create race
             _currentRace = _raceEngine.CreateRace(config);
-            Console.WriteLine($"Created race with {_currentRace.Skaters.Count} skaters");
+            Console.WriteLine($"Created race with {_currentRace.Racers.Count} racers");
             Console.WriteLine();
 
             // First pause - ensure FinishLynx is running
@@ -177,7 +177,7 @@ class Program
                     
                     // Create new race with same configuration
                     _currentRace = _raceEngine.CreateRace(config);
-                    Console.WriteLine($"Created new race with {_currentRace.Skaters.Count} skaters");
+                    Console.WriteLine($"Created new race with {_currentRace.Racers.Count} racers");
                     Console.WriteLine();
                     
                     // Start the new race
@@ -235,18 +235,18 @@ class Program
     private static async void OnLapCompleted(object? sender, LapCompletedEventArgs e)
     {
         var lapTime = e.LapTime;
-        var skater = e.Skater;
+        var racer = e.Racer;
 
         // Calculate elapsed time from race start
         var elapsedTime = lapTime.Timestamp - _currentRace!.StartTime;
         var elapsedSeconds = elapsedTime.TotalSeconds;
         
-        // Calculate total elapsed time for this skater
-        var totalElapsedTime = skater.LapTimes.Sum(l => l.TimeInSeconds);
+        // Calculate total elapsed time for this racer
+        var totalElapsedTime = racer.LapTimes.Sum(l => l.TimeInSeconds);
         
         // Log lap time with both split time and total elapsed time
         var lapType = lapTime.IsHalfLap ? "Half-lap" : $"Lap {lapTime.LapNumber}";
-        var logMessage = $"[+{elapsedSeconds:F1}s] Lane {skater.Lane} - {lapType}: {lapTime.TimeInSeconds:F4}s (Total: {totalElapsedTime:F4}s)";
+        var logMessage = $"[+{elapsedSeconds:F1}s] Lane {racer.Lane} - {lapType}: {lapTime.TimeInSeconds:F4}s (Total: {totalElapsedTime:F4}s)";
         
         // Write the lap time (this will appear above the progress line)
         Console.WriteLine(logMessage);
@@ -255,23 +255,23 @@ class Program
         // Send packets (dual transponder behavior)
         if (_packetSerializer != null && _currentConfig != null)
         {
-            await SendLapTimePackets(lapTime, skater);
+            await SendLapTimePackets(lapTime, racer);
         }
 
-        // Check if skater finished AFTER packets are sent
-        if (_raceEngine != null && _currentRace != null && _raceEngine.IsSkaterFinished(skater, _currentRace))
+        // Check if racer finished AFTER packets are sent
+        if (_raceEngine != null && _currentRace != null && _raceEngine.IsRacerFinished(racer, _currentRace))
         {
-            skater.IsFinished = true;
-            skater.FinishTime = DateTime.Now;
+            racer.IsFinished = true;
+            racer.FinishTime = DateTime.Now;
             
-            var finishElapsed = skater.FinishTime!.Value - _currentRace!.StartTime;
-            var finishMessage = $"[+{finishElapsed.TotalSeconds:F1}s] Lane {skater.Lane} - 🏁 FINISHED!";
+            var finishElapsed = racer.FinishTime!.Value - _currentRace!.StartTime;
+            var finishMessage = $"[+{finishElapsed.TotalSeconds:F1}s] Lane {racer.Lane} - 🏁 FINISHED!";
             Console.WriteLine($"*** {finishMessage} ***");
             _raceResults.Add(finishMessage);
         }
     }
 
-    private static async Task SendLapTimePackets(LapTime lapTime, Skater skater)
+    private static async Task SendLapTimePackets(LapTime lapTime, Racer racer)
     {
         try
         {
@@ -302,7 +302,7 @@ class Program
                 
                 // Create a new LapTime with slightly later timestamp for second transponder
                 var delayedLapTime = new LapTime(
-                    lapTime.SkaterLane,
+                    lapTime.RacerLane,
                     lapTime.LapNumber,
                     lapTime.TimeInSeconds,
                     lapTime.Timestamp.AddMilliseconds(delayMs),
@@ -342,13 +342,13 @@ class Program
 
         var startTime = _currentRace.StartTime;
         
-        foreach (var skater in _currentRace.Skaters)
+        foreach (var racer in _currentRace.Racers)
         {
             try
             {
                 // Create a start line crossing packet (lap 0, time 0)
                 var startLapTime = new LapTime(
-                    skater.Lane,
+                    racer.Lane,
                     0, // Start line crossing is lap 0
                     0.0, // No time for start line crossing
                     startTime,
@@ -360,7 +360,7 @@ class Program
                 var packetString = System.Text.Encoding.UTF8.GetString(packetData).Trim();
                 
                 // Display first packet
-                Console.WriteLine($"  -> Start crossing - Lane {skater.Lane}: {packetString}");
+                Console.WriteLine($"  -> Start crossing - Lane {racer.Lane}: {packetString}");
                 
                 // Send first packet (first transponder)
                 if (_tcpClient?.Connected == true)
@@ -382,7 +382,7 @@ class Program
                     
                     // Create a delayed packet with slightly later timestamp for second transponder
                     var delayedStartLapTime = new LapTime(
-                        skater.Lane,
+                        racer.Lane,
                         0, // Start line crossing is lap 0
                         0.0, // No time for start line crossing
                         startTime.AddMilliseconds(delayMs),
@@ -394,7 +394,7 @@ class Program
                     var delayedPacketString = System.Text.Encoding.UTF8.GetString(delayedPacketData).Trim();
                     
                     // Display second packet
-                    Console.WriteLine($"  -> Start crossing - Lane {skater.Lane}: {delayedPacketString}");
+                    Console.WriteLine($"  -> Start crossing - Lane {racer.Lane}: {delayedPacketString}");
                     
                     // Send the delayed packet (second transponder)
                     if (_tcpClient?.Connected == true)
@@ -411,7 +411,7 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"  -> Start crossing packet error for Lane {skater.Lane}: {ex.Message}");
+                Console.WriteLine($"  -> Start crossing packet error for Lane {racer.Lane}: {ex.Message}");
             }
         }
     }
@@ -420,22 +420,22 @@ class Program
     {
         if (_currentRace == null) return "Unknown";
 
-        var finishedSkaters = _currentRace.Skaters.Count(s => s.IsFinished);
-        var totalSkaters = _currentRace.Skaters.Count;
+        var finishedRacers = _currentRace.Racers.Count(s => s.IsFinished);
+        var totalRacers = _currentRace.Racers.Count;
         
-        return $"{finishedSkaters}/{totalSkaters} finished";
+        return $"{finishedRacers}/{totalRacers} finished";
     }
 
     private static bool IsRaceFinished()
     {
         if (_currentRace == null) return false;
         
-        // Check if all skaters are finished
-        var allSkatersFinished = _currentRace.Skaters.All(s => s.IsFinished);
+        // Check if all racers are finished
+        var allRacersFinished = _currentRace.Racers.All(s => s.IsFinished);
         
-        // Only consider the race finished if all skaters are finished
+        // Only consider the race finished if all racers are finished
         // The remaining events will be processed naturally by the timer
-        return allSkatersFinished;
+        return allRacersFinished;
     }
 
     private static void DisplayFinalResults()
@@ -445,24 +445,24 @@ class Program
         Console.WriteLine("=== FINAL RACE RESULTS ===");
         Console.WriteLine();
 
-        var finishedSkaters = _currentRace.Skaters
+        var finishedRacers = _currentRace.Racers
             .Where(s => s.IsFinished)
             .OrderBy(s => s.FinishTime)
             .ToList();
 
         Console.WriteLine("Final Standings:");
-        for (int i = 0; i < finishedSkaters.Count; i++)
+        for (int i = 0; i < finishedRacers.Count; i++)
         {
-            var skater = finishedSkaters[i];
+            var racer = finishedRacers[i];
             var position = i + 1;
-            var totalTime = skater.FinishTime.HasValue ? (skater.FinishTime.Value - _currentRace.StartTime).TotalSeconds : 0;
+            var totalTime = racer.FinishTime.HasValue ? (racer.FinishTime.Value - _currentRace.StartTime).TotalSeconds : 0;
             
-            Console.WriteLine($"  {position}. Lane {skater.Lane} - {totalTime:F4}s");
+            Console.WriteLine($"  {position}. Lane {racer.Lane} - {totalTime:F4}s");
         }
 
         Console.WriteLine();
         Console.WriteLine($"Total race time: {(_currentRace.EndTime!.Value - _currentRace.StartTime).TotalSeconds:F1} seconds");
-        Console.WriteLine($"Number of skaters: {_currentRace.Skaters.Count}");
+        Console.WriteLine($"Number of racers: {_currentRace.Racers.Count}");
         Console.WriteLine($"Race distance: {_currentRace.Laps} laps");
     }
 
@@ -475,7 +475,7 @@ class Program
             "=== RACE RESULTS ===",
             $"Race Date: {_currentRace.StartTime:yyyy-MM-dd HH:mm:ss}",
             $"Total Laps: {_currentRace.Laps}",
-            $"Number of Skaters: {_currentRace.Skaters.Count}",
+            $"Number of Racers: {_currentRace.Racers.Count}",
             $"Race Duration: {(_currentRace.EndTime - _currentRace.StartTime)?.TotalSeconds:F1} seconds",
             "",
             "=== LAP TIMES ===",
@@ -487,18 +487,18 @@ class Program
         results.Add("");
         results.Add("=== FINAL STANDINGS ===");
         
-        var finishedSkaters = _currentRace.Skaters
+        var finishedRacers = _currentRace.Racers
             .Where(s => s.IsFinished)
             .OrderBy(s => s.FinishTime)
             .ToList();
 
-        for (int i = 0; i < finishedSkaters.Count; i++)
+        for (int i = 0; i < finishedRacers.Count; i++)
         {
-            var skater = finishedSkaters[i];
+            var racer = finishedRacers[i];
             var position = i + 1;
-            var totalTime = skater.FinishTime.HasValue ? (skater.FinishTime.Value - _currentRace.StartTime).TotalSeconds : 0;
+            var totalTime = racer.FinishTime.HasValue ? (racer.FinishTime.Value - _currentRace.StartTime).TotalSeconds : 0;
             
-            results.Add($"{position}. Lane {skater.Lane} - {totalTime:F4}s");
+            results.Add($"{position}. Lane {racer.Lane} - {totalTime:F4}s");
         }
 
         var outputDir = "output";
