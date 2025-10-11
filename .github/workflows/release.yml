@@ -12,6 +12,11 @@ on:
           - major
           - minor
           - patch
+      is_rc:
+        description: "Create release candidate build"
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build-and-release:
@@ -36,6 +41,7 @@ jobs:
         id: bump
         run: |
           bump_type=${{ github.event.inputs.bump }}
+          is_rc=${{ github.event.inputs.is_rc }}
           current=${{ steps.get_tag.outputs.tag }}
           current=${current#v}
 
@@ -56,7 +62,16 @@ jobs:
               ;;
           esac
 
-          new_version="v$major.$minor.$patch"
+          if [ "$is_rc" = "true" ]; then
+            # For RC builds, add timestamp to make them unique
+            timestamp=$(date -u +"%Y%m%d%H%M%S")
+            new_version="v$major.$minor.$patch-rc.$timestamp"
+            echo "is_rc=true" >> $GITHUB_OUTPUT
+          else
+            new_version="v$major.$minor.$patch"
+            echo "is_rc=false" >> $GITHUB_OUTPUT
+          fi
+          
           echo "New version: $new_version"
           echo "version=$new_version" >> $GITHUB_OUTPUT
 
@@ -77,14 +92,21 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a ${{ steps.bump.outputs.version }} -m "Release ${{ steps.bump.outputs.version }}"
+          IS_RC=${{ steps.bump.outputs.is_rc }}
+          
+          if [ "$IS_RC" = "true" ]; then
+            git tag -a ${{ steps.bump.outputs.version }} -m "Release Candidate ${{ steps.bump.outputs.version }}"
+          else
+            git tag -a ${{ steps.bump.outputs.version }} -m "Release ${{ steps.bump.outputs.version }}"
+          fi
           git push origin ${{ steps.bump.outputs.version }}
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.bump.outputs.version }}
-          name: Release ${{ steps.bump.outputs.version }}
+          name: ${{ steps.bump.outputs.is_rc == 'true' && format('Release Candidate {0}', steps.bump.outputs.version) || format('Release {0}', steps.bump.outputs.version) }}
           files: ${{ steps.rename_zip.outputs.zip_name }}
+          prerelease: ${{ steps.bump.outputs.is_rc == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
