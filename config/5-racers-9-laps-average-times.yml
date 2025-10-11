@@ -1,0 +1,20 @@
+race:
+  laps: 9  # Can be any whole or half number (4, 4.5, 9, 13.5, etc.)
+  tcp:
+    host: localhost
+    port: 2002
+  dual_transponder:
+    enabled: true # Record two passings for each lap crossing (one for each ankle)
+    delay_milliseconds: 50.0  # Delay between first and second transponder packets
+
+racers:
+  - lane: 1
+    average_split_time: 12.2  # seconds
+  - lane: 2
+    average_split_time: 11.8
+  - lane: 3
+    average_split_time: 12.5
+  - lane: 4
+    average_split_time: 13.1
+  - lane: 5
+    average_split_time: 12.9
