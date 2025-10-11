@@ -75,6 +75,11 @@ jobs:
           echo "New version: $new_version"
           echo "version=$new_version" >> $GITHUB_OUTPUT
 
+      - name: Create VERSION.txt file
+        run: |
+          echo "${{ steps.bump.outputs.version }}" > VERSION.txt
+          echo "Created VERSION.txt with version: ${{ steps.bump.outputs.version }}"
+
       - name: Build project
         run: |
           chmod +x build-dist.sh

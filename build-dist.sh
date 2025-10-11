@@ -89,6 +89,14 @@ cp config/*.yml dist/deployment/race-configs/
 # Copy documentation
 cp etc/README-Windows.md dist/deployment/README.md
 
+# Copy VERSION.txt if it exists
+if [ -f "VERSION.txt" ]; then
+    cp VERSION.txt dist/deployment/
+    print_success "VERSION.txt copied to deployment package"
+else
+    print_warning "VERSION.txt not found - skipping"
+fi
+
 # Create Windows batch file
 cat > dist/deployment/run-race.bat << 'EOF'
 @echo off
@@ -118,6 +126,9 @@ echo "  • FakeLynx.exe ($EXE_SIZE)"
 echo "  • race-configs/ (directory with all race configurations)"
 echo "  • run-race.bat (Windows batch file)"
 echo "  • README.md (Windows instructions)"
+if [ -f "VERSION.txt" ]; then
+    echo "  • VERSION.txt (version information)"
+fi
 echo
 echo "Zip file created: FakeLynx-win-x64.zip ($ZIP_SIZE)"
 echo
