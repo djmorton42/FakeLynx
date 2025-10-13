@@ -81,8 +81,10 @@ jobs:
 
       - name: Create VERSION.txt file
         run: |
-          echo "${{ steps.bump.outputs.version }}" > VERSION.txt
-          echo "Created VERSION.txt with version: ${{ steps.bump.outputs.version }}"
+          VERSION_WITHOUT_V=${{ steps.bump.outputs.version }}
+          VERSION_WITHOUT_V=${VERSION_WITHOUT_V#v}
+          echo "$VERSION_WITHOUT_V" > VERSION.txt
+          echo "Created VERSION.txt with version: $VERSION_WITHOUT_V"
 
       - name: Build project
         run: |
