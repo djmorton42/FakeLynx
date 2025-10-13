@@ -22,6 +22,30 @@ synthesized, two crossings will be sent, a configurable amount of time apart, to
 racer wearing a transponder on each ankle.
 
 
+## FinishLynx Configuration
+
+![FinishLynx LapTime Device Configuration Example](./etc/FinishLynxLapTimeConfig.png)
+
+- To configure FinishLynx to receive data from FakeLynx, you must create a new LapTime Device (LapTime->Options->New)
+- Use the Device: "Lynx" and name it "FakeLynx"
+- In the "Serial Port" dropdown, select "Network (listen)" and set "Port" to 2002.
+- Ensure Sync. Source is set to 'Internal'.
+- The messages that FakeLynx sends to FinishLynx contain an id number. If using a real transponder device, this would be the transponder id. It is necessary to ensure your Map File contains the id->lane mappings FakeLynx uses. FakeLynx supports 1-10 racers, so if you add the following to your mapping file FinishLynx should link the race ids to the lane numbers correctly. Depending on your normal mapping file for real competitions, these values may or may not conflict. If they do not, you can simply add them to your regular config. If they do, you should create a backup of your original mapping file, update it to use the FakeLynx values while testing, and then restore the original versio for real usage.
+
+``` LaneTransponderMapping.txt
+# Used for FakeLynx Testing
+1,1
+2,2
+3,3
+4,4
+5,5
+6,6
+7,7
+8,8
+9,9
+10,10
+```
+
 ## Configuration
 
 The application uses YAML configuration files. See `config/sample-race.yml` for an example:
