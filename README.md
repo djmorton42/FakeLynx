@@ -61,7 +61,7 @@ race:
     enabled: true # to generate two transponder events on each crossing or not
     delay_milliseconds: 50.0 # how long between transmissions on each transponder
 
-skaters:
+racers:
   - lane: 1
     average_split_time: 12.2  # seconds
   - lane: 2
@@ -111,5 +111,5 @@ The application implements the FinishLynx LapTime Protocol exactly as specified:
 - **Realism**: Occasional "bad laps" or "great laps" for variety
 
 ### Performance Trends
-Each skater has a consistent performance trend (95-105% of average) to create realistic race outcomes where different skaters can win on different runs.
+Each racer has a consistent performance trend (95-105% of average) to create realistic race outcomes where different racers can win on different runs.
 
